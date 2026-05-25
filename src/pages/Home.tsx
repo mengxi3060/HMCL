@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Download, Copy, Check, Loader2, Video, Image, FileText, Music } from 'lucide-react';
+import { Download, Copy, Check, Loader2, Video, Image, FileText, Music, AlertCircle, ExternalLink } from 'lucide-react';
 
 interface VideoData {
   videoUrl: string;
@@ -7,6 +7,8 @@ interface VideoData {
   caption: string;
   title?: string;
   author?: string;
+  type?: string;
+  images?: string[];
 }
 
 interface ParseResult {
@@ -20,6 +22,7 @@ export default function Home() {
   const [result, setResult] = useState<ParseResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const handleParse = useCallback(async () => {
     if (!inputText.trim()) {
@@ -33,15 +36,13 @@ export default function Home() {
     try {
       const response = await fetch('/api/douyin/parse', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: inputText }),
       });
 
       const data: ParseResult = await response.json();
       setResult(data);
-    } catch (error) {
+    } catch {
       setResult({ success: false, message: '网络错误，请稍后重试' });
     } finally {
       setIsLoading(false);
@@ -50,18 +51,22 @@ export default function Home() {
 
   const handleDownload = useCallback(async (url: string, filename: string) => {
     try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const urlObject = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = urlObject;
+      a.href = url;
       a.download = filename;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(urlObject);
-    } catch (error) {
-      alert('下载失败，请手动复制链接');
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+      } catch {
+        prompt('请手动复制下载链接:', url);
+      }
     }
   }, []);
 
@@ -73,10 +78,18 @@ export default function Home() {
     }
   }, [result]);
 
+  const handleCopyLink = useCallback((url: string) => {
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }, []);
+
   const handleClear = useCallback(() => {
     setInputText('');
     setResult(null);
   }, []);
+
+  const isImageType = result?.data?.type === 'note' || result?.data?.type === 'slides';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-pink-50 to-orange-50">
@@ -96,7 +109,7 @@ export default function Home() {
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="请在此粘贴包含抖音链接的文本...&#10;&#10;例如：&#10;这是一个有趣的视频 https://v.douyin.com/xxxx/ 快来看看"
+              placeholder={"请在此粘贴包含抖音链接的文本...\n\n例如：\n7.87 Rss:/ 这首歌太好听了 https://v.douyin.com/xxxx/ 复制此链接"}
               className="w-full h-32 p-4 border-2 border-gray-200 rounded-xl resize-none focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100 transition-all text-gray-700 placeholder-gray-400"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && e.ctrlKey) {
@@ -113,7 +126,7 @@ export default function Home() {
               </button>
             )}
           </div>
-          
+
           <div className="mt-4 flex gap-3">
             <button
               onClick={handleParse}
@@ -130,7 +143,7 @@ export default function Home() {
               )}
             </button>
           </div>
-          
+
           <p className="mt-3 text-xs text-gray-400 text-center">
             快捷键: Ctrl + Enter 快速解析
           </p>
@@ -140,39 +153,44 @@ export default function Home() {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             {result.success && result.data ? (
               <>
-                <div className="relative">
-                  <img
-                    src={result.data.coverUrl}
-                    alt="视频封面"
-                    className="w-full h-64 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                    <div className="flex items-center gap-2">
-                      {result.data.author && (
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm rounded-full">
-                          {result.data.author}
-                        </span>
-                      )}
-                      {result.data.title && (
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm rounded-full">
-                          {result.data.title}
-                        </span>
-                      )}
+                {result.data.coverUrl && (
+                  <div className="relative">
+                    <img
+                      src={result.data.coverUrl}
+                      alt="视频封面"
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {result.data.author && (
+                          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm rounded-full">
+                            @{result.data.author}
+                          </span>
+                        )}
+                        {isImageType && (
+                          <span className="px-3 py-1 bg-purple-500/60 backdrop-blur-sm text-white text-sm rounded-full">
+                            图集
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="p-6">
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      视频文案
-                    </h3>
-                    <div className="relative">
-                      <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 min-h-[80px]">
-                        {result.data.caption || '暂无文案'}
-                      </p>
-                      {result.data.caption && (
+                  {result.data.caption && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        视频文案
+                      </h3>
+                      <div className="relative">
+                        <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 min-h-[80px]">
+                          {result.data.caption}
+                        </p>
                         <button
                           onClick={handleCopyCaption}
                           className="absolute top-3 right-3 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -184,30 +202,60 @@ export default function Home() {
                             <Copy className="w-4 h-4" />
                           )}
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <button
-                      onClick={() => handleDownload(result.data.videoUrl, 'douyin_video.mp4')}
-                      className="flex flex-col items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-xl transition-colors group"
-                    >
-                      <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Video className="w-6 h-6 text-white" />
+                  {isImageType && result.data.images && result.data.images.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-2">
+                        <Image className="w-4 h-4" />
+                        图集 ({result.data.images.length}张)
+                      </h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {result.data.images.map((img, idx) => (
+                          <a
+                            key={idx}
+                            href={img}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+                          >
+                            <img
+                              src={img}
+                              alt={`图片 ${idx + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                          </a>
+                        ))}
                       </div>
-                      <span className="text-sm font-medium text-gray-700">下载视频</span>
-                    </button>
+                    </div>
+                  )}
 
-                    <button
-                      onClick={() => handleDownload(result.data.coverUrl, 'douyin_cover.jpg')}
-                      className="flex flex-col items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
-                    >
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Image className="w-6 h-6 text-white" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">下载封面</span>
-                    </button>
+                  <div className={`grid ${isImageType ? 'grid-cols-2' : 'grid-cols-3'} gap-4`}>
+                    {!isImageType && result.data.videoUrl && (
+                      <button
+                        onClick={() => handleDownload(result.data.videoUrl, 'douyin_video.mp4')}
+                        className="flex flex-col items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-xl transition-colors group"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Video className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">下载视频</span>
+                      </button>
+                    )}
+
+                    {result.data.coverUrl && (
+                      <button
+                        onClick={() => handleDownload(result.data.coverUrl, 'douyin_cover.jpg')}
+                        className="flex flex-col items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Image className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">下载封面</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={handleCopyCaption}
@@ -226,12 +274,35 @@ export default function Home() {
                       </span>
                     </button>
                   </div>
+
+                  {result.data.videoUrl && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                        <ExternalLink className="w-3 h-3" />
+                        视频直链
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={result.data.videoUrl}
+                          className="flex-1 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 truncate"
+                        />
+                        <button
+                          onClick={() => handleCopyLink(result.data.videoUrl)}
+                          className="px-3 py-2 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
+                        >
+                          {linkCopied ? '已复制' : '复制链接'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
               <div className="p-8 text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Download className="w-8 h-8 text-red-500" />
+                  <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
                 <p className="text-gray-600 text-lg font-medium mb-2">解析失败</p>
                 <p className="text-gray-400">{result.message}</p>
@@ -245,7 +316,11 @@ export default function Home() {
           <ul className="text-sm text-gray-600 space-y-2">
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
-              将包含抖音链接的文本粘贴到输入框中
+              在抖音APP中点击分享按钮，选择「复制链接」
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
+              将复制的文本粘贴到输入框中，系统会自动提取链接
             </li>
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
@@ -253,13 +328,13 @@ export default function Home() {
             </li>
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
-              解析成功后可下载视频、封面图片或复制文案
+              解析成功后可下载视频/封面、复制文案或复制直链
             </li>
           </ul>
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-400">
-          <p>支持解析抖音（douyin.com）和 TikTok（tiktok.com）链接</p>
+          <p>支持解析抖音（douyin.com）视频和图集链接</p>
         </div>
       </div>
     </div>
