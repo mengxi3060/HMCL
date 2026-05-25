@@ -16,9 +16,31 @@ interface ParseResponse {
 }
 
 function extractDouyinUrl(text: string): string | null {
-  const regex = /https?:\/\/(?:www\.)?(?:douyin|tiktok)\.(?:com|cn)\/[^\s]+/gi;
-  const matches = text.match(regex);
-  return matches ? matches[0] : null;
+  const regexes = [
+    /https?:\/\/v\.douyin\.com\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?douyin\.com\/video\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?douyin\.com\/aweme\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?douyin\.com\/share\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?douyin\.com\/user\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?douyin\.cn\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?tiktok\.com\/[^\s]+/gi,
+    /https?:\/\/(?:www\.)?tiktok\.cn\/[^\s]+/gi,
+  ];
+
+  for (const regex of regexes) {
+    const matches = text.match(regex);
+    if (matches) {
+      return matches[0];
+    }
+  }
+
+  const generalRegex = /https?:\/\/[^\s]*douyin[^\s]*/gi;
+  const generalMatches = text.match(generalRegex);
+  if (generalMatches) {
+    return generalMatches[0];
+  }
+
+  return null;
 }
 
 async function fetchDouyinVideoInfo(url: string): Promise<ParseResponse> {
