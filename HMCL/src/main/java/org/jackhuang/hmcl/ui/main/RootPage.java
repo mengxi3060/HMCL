@@ -146,13 +146,11 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
         protected Skin(RootPage control) {
             super(control);
 
-            // first item in left sidebar
             AccountAdvancedListItem accountListItem = new AccountAdvancedListItem();
             accountListItem.setOnAction(e -> Controllers.navigate(Controllers.getAccountListPage()));
             FXUtils.onSecondaryButtonClicked(accountListItem, () -> AccountListPopupMenu.show(accountListItem, JFXPopup.PopupVPosition.TOP, JFXPopup.PopupHPosition.LEFT, accountListItem.getWidth(), 0));
             accountListItem.accountProperty().bind(Accounts.selectedAccountProperty());
 
-            // second item in left sidebar
             GameAdvancedListItem gameListItem = new GameAdvancedListItem();
             gameListItem.setOnAction(e -> {
                 Profile profile = Profiles.getSelectedProfile();
@@ -172,14 +170,12 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
             }
             FXUtils.onSecondaryButtonClicked(gameListItem, () -> showGameListPopupMenu(gameListItem));
 
-            // third item in left sidebar
             AdvancedListItem gameItem = new AdvancedListItem();
             gameItem.setLeftIcon(SVG.FORMAT_LIST_BULLETED);
             gameItem.setTitle(i18n("version.manage"));
             gameItem.setOnAction(e -> Controllers.navigate(Controllers.getGameListPage()));
             FXUtils.onSecondaryButtonClicked(gameItem, () -> showGameListPopupMenu(gameItem));
 
-            // forth item in left sidebar
             AdvancedListItem downloadItem = new AdvancedListItem();
             downloadItem.setLeftIcon(SVG.DOWNLOAD);
             downloadItem.setTitle(i18n("download"));
@@ -191,7 +187,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                 FXUtils.prepareOnMouseEnter(downloadItem, Controllers::prepareDownloadPage);
             }
 
-            // fifth item in left sidebar
             AdvancedListItem launcherSettingsItem = new AdvancedListItem();
             launcherSettingsItem.setLeftIcon(SVG.SETTINGS);
             launcherSettingsItem.setTitle(i18n("settings"));
@@ -203,7 +198,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                 FXUtils.prepareOnMouseEnter(launcherSettingsItem, Controllers::prepareSettingsPage);
             }
 
-            // sixth item in left sidebar
             AdvancedListItem terracottaItem = new AdvancedListItem();
             terracottaItem.setLeftIcon(SVG.GRAPH2);
             terracottaItem.setTitle(i18n("terracotta"));
@@ -226,7 +220,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                 }
             });
 
-            // the left sidebar
             AdvancedListBox sideBar = new AdvancedListBox()
                     .startCategory(i18n("account").toUpperCase(Locale.ROOT))
                     .add(accountListItem)
@@ -235,10 +228,10 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                     .add(gameItem)
                     .add(downloadItem)
                     .startCategory(i18n("automation").toUpperCase(Locale.ROOT))
-                    .addNavigationDrawerItem(i18n("automation.server_bookmarks"), SVG.BOOKMARK, () -> {
+                    .addNavigationDrawerItem(i18n("automation.server_bookmarks"), SVG.ARCHIVE, () -> {
                         Controllers.navigate(Controllers.getServerBookmarksPage());
                     })
-                    .addNavigationDrawerItem(i18n("automation.quick_launch"), SVG.PLAY, () -> {
+                    .addNavigationDrawerItem(i18n("automation.quick_launch"), SVG.ROCKET_LAUNCH, () -> {
                         Controllers.navigate(Controllers.getQuickLaunchPage());
                     })
                     .startCategory(i18n("settings.launcher.general").toUpperCase(Locale.ROOT))
@@ -249,7 +242,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                         Controllers.navigate(Controllers.getSettingsPage());
                     });
 
-            // the root page, with the sidebar in left, navigator in center.
             setLeft(sideBar);
             setCenter(getSkinnable().getMainPage());
         }
