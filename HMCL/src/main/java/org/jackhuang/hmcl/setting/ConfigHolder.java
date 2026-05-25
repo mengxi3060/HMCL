@@ -19,6 +19,7 @@ package org.jackhuang.hmcl.setting;
 
 import com.google.gson.JsonParseException;
 import org.jackhuang.hmcl.Metadata;
+import org.jackhuang.hmcl.util.AutomationManager;
 import org.jackhuang.hmcl.util.FileSaver;
 import org.jackhuang.hmcl.util.i18n.I18n;
 import org.jackhuang.hmcl.util.io.FileUtils;
@@ -97,6 +98,14 @@ public final class ConfigHolder {
         I18n.setLocale(configInstance.getLocalization());
         LOG.setLogRetention(globalConfig().getLogRetention());
         Settings.init();
+
+        // Initialize automation features
+        try {
+            AutomationManager.init(Metadata.HMCL_GLOBAL_DIRECTORY);
+            LOG.info("Automation features initialized");
+        } catch (Exception e) {
+            LOG.warning("Failed to initialize automation features: " + e.getMessage());
+        }
 
         if (newlyCreated) {
             LOG.info("Creating config file " + configLocation);

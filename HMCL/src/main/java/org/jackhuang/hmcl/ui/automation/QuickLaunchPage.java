@@ -3,6 +3,10 @@ package org.jackhuang.hmcl.ui.automation;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXTextField;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -11,21 +15,23 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.jackhuang.hmcl.ui.Controllers;
+import org.jackhuang.hmcl.ui.construct.AdvancedListBox;
+import org.jackhuang.hmcl.ui.decorator.DecoratorPage;
 import org.jackhuang.hmcl.util.QuickLaunchConfig;
 import org.jackhuang.hmcl.util.QuickLaunchManager;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
-public class QuickLaunchPage extends VBox {
+public class QuickLaunchPage extends VBox implements DecoratorPage {
+    private final ReadOnlyObjectWrapper<State> state = new ReadOnlyObjectWrapper<>(State.fromTitle(i18n("automation.quick_launch")));
 
     private final JFXListView<QuickLaunchConfig> listView;
     private final JFXButton addButton;
     private final JFXButton removeButton;
     private final JFXButton editButton;
     private final JFXButton launchButton;
+
+    private final ObservableList<QuickLaunchConfig> observableConfigs = FXCollections.observableArrayList();
 
     public QuickLaunchPage() {
         setSpacing(0);
@@ -68,6 +74,18 @@ public class QuickLaunchPage extends VBox {
         listView.setExpanded(true);
         listView.getStyleClass().add("card-list");
         VBox.setVgrow(listView, Priority.ALWAYS);
+        listView.setItems(observableConfigs);
+        listView.setCellFactory(listView -> new AdvancedListBox.AdvancedListCell() {
+            @Override
+            protected void updateItem(QuickLaunchConfig item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getName() + " - " + item.getVersionId());
+                }
+            }
+        });
 
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean hasSelection = newVal != null;
@@ -81,9 +99,14 @@ public class QuickLaunchPage extends VBox {
         loadConfigs();
     }
 
+    @Override
+    public ReadOnlyObjectProperty<State> stateProperty() {
+        return state.getReadOnlyProperty();
+    }
+
     private void loadConfigs() {
         List<QuickLaunchConfig> configs = QuickLaunchManager.getInstance().getConfigsSortedByLastUsed();
-        listView.getItems().setAll(configs);
+        observableConfigs.setAll(configs);
     }
 
     private void showAddDialog() {

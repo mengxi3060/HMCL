@@ -53,6 +53,8 @@ import org.jackhuang.hmcl.ui.account.AccountListPage;
 import org.jackhuang.hmcl.ui.animation.AnimationUtils;
 import org.jackhuang.hmcl.ui.animation.ContainerAnimations;
 import org.jackhuang.hmcl.ui.animation.Motion;
+import org.jackhuang.hmcl.ui.automation.QuickLaunchPage;
+import org.jackhuang.hmcl.ui.automation.ServerBookmarksPage;
 import org.jackhuang.hmcl.ui.construct.*;
 import org.jackhuang.hmcl.ui.construct.MessageDialogPane.MessageType;
 import org.jackhuang.hmcl.ui.decorator.DecoratorController;
@@ -129,6 +131,8 @@ public final class Controllers {
     });
     private static LauncherSettingsPage settingsPage;
     private static Lazy<TerracottaPage> terracottaPage = new Lazy<>(TerracottaPage::new);
+    private static Lazy<ServerBookmarksPage> serverBookmarksPage = new Lazy<>(ServerBookmarksPage::new);
+    private static Lazy<QuickLaunchPage> quickLaunchPage = new Lazy<>(QuickLaunchPage::new);
 
     private Controllers() {
     }
@@ -207,6 +211,16 @@ public final class Controllers {
     // FXThread
     public static Node getTerracottaPage() {
         return terracottaPage.get();
+    }
+
+    // FXThread
+    public static Node getServerBookmarksPage() {
+        return serverBookmarksPage.get();
+    }
+
+    // FXThread
+    public static Node getQuickLaunchPage() {
+        return quickLaunchPage.get();
     }
 
     // FXThread

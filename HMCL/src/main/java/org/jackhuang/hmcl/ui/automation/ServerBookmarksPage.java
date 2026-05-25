@@ -1,9 +1,12 @@
 package org.jackhuang.hmcl.ui.automation;
 
 import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXDialog;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXTextField;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -11,27 +14,25 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.jackhuang.hmcl.setting.Theme;
 import org.jackhuang.hmcl.ui.Controllers;
-import org.jackhuang.hmcl.ui.FXUtils;
 import org.jackhuang.hmcl.ui.construct.*;
 import org.jackhuang.hmcl.ui.decorator.DecoratorPage;
 import org.jackhuang.hmcl.util.ServerAddress;
 import org.jackhuang.hmcl.util.ServerBookmark;
 import org.jackhuang.hmcl.util.ServerBookmarkManager;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
 public class ServerBookmarksPage extends VBox implements DecoratorPage {
+    private final ReadOnlyObjectWrapper<State> state = new ReadOnlyObjectWrapper<>(State.fromTitle(i18n("automation.server_bookmarks")));
 
     private final JFXListView<ServerBookmark> listView;
     private final JFXButton addButton;
     private final JFXButton removeButton;
     private final JFXButton editButton;
     private final JFXButton connectButton;
+
+    private final ObservableList<ServerBookmark> observableBookmarks = FXCollections.observableArrayList();
 
     public ServerBookmarksPage() {
         setSpacing(0);
@@ -74,6 +75,18 @@ public class ServerBookmarksPage extends VBox implements DecoratorPage {
         listView.setExpanded(true);
         listView.getStyleClass().add("card-list");
         VBox.setVgrow(listView, Priority.ALWAYS);
+        listView.setItems(observableBookmarks);
+        listView.setCellFactory(listView -> new AdvancedListBox.AdvancedListCell() {
+            @Override
+            protected void updateItem(ServerBookmark item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getName() + " - " + item.getAddress());
+                }
+            }
+        });
 
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean hasSelection = newVal != null;
@@ -87,9 +100,14 @@ public class ServerBookmarksPage extends VBox implements DecoratorPage {
         loadBookmarks();
     }
 
+    @Override
+    public ReadOnlyObjectProperty<State> stateProperty() {
+        return state.getReadOnlyProperty();
+    }
+
     private void loadBookmarks() {
         List<ServerBookmark> bookmarks = ServerBookmarkManager.getInstance().getBookmarksSortedByLastUsed();
-        listView.getItems().setAll(bookmarks);
+        observableBookmarks.setAll(bookmarks);
     }
 
     private void showAddDialog() {

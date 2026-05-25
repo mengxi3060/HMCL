@@ -234,6 +234,13 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                     .add(gameListItem)
                     .add(gameItem)
                     .add(downloadItem)
+                    .startCategory(i18n("automation").toUpperCase(Locale.ROOT))
+                    .addNavigationDrawerItem(i18n("automation.server_bookmarks"), SVG.BOOKMARK, () -> {
+                        Controllers.navigate(Controllers.getServerBookmarksPage());
+                    })
+                    .addNavigationDrawerItem(i18n("automation.quick_launch"), SVG.PLAY, () -> {
+                        Controllers.navigate(Controllers.getQuickLaunchPage());
+                    })
                     .startCategory(i18n("settings.launcher.general").toUpperCase(Locale.ROOT))
                     .add(launcherSettingsItem)
                     .add(terracottaItem)
